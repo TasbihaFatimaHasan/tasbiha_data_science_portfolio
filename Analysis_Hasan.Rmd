@@ -1,0 +1,194 @@
+---
+title: "Reasearch_Analysis.Rmd"
+author: "Tasbiha fatima  Hasan"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library( readxl)
+
+```
+
+```{r}
+Data_sheet_Project_Hasan <-read_excel("C:/Users/qj6578om/OneDrive - Minnesota State/Desktop/Data Science 211-01/Reseach -Project/Data sheet_Project _Hasan.xlsx")
+head(Data_sheet_Project_Hasan)
+```
+
+
+```{r}
+water <- Data_sheet_Project_Hasan %>%
+  mutate(Intake_L = `Bottle Consumed ( ml)` * 0.5)
+head(water)
+```
+
+
+
+
+```{r}
+water <- Data_sheet_Project_Hasan %>%
+  select(-`Reccommneded =2.7 L`) %>%
+  mutate(
+    Intake_L = `Convert ml *Liters`,
+    Status = case_when(
+      Intake_L < 2.7 ~ "Low",
+      Intake_L == 2.7 ~ "Met",
+      Intake_L > 2.7 ~ "High"
+    ),
+    Difference = Intake_L - 2.7,
+    Weekday = weekdays(as.Date(Date)),
+    Date = format(as.Date(Date), "%m/%d/%Y")                                         
+  ) %>%
+  select(Date, Weekday, Intake_L, Status, Difference)                                   
+head(water)
+```
+
+```{r}
+water <- water %>%
+  filter(!is.na(Status)) %>%
+  mutate(Status = factor(Status, levels = c("Low", "Medium", "High")))
+head(water)
+
+```
+
+# this was done to remove N/A 
+
+
+
+
+## Q3 plot the graph 
+```{r}
+library(tidyverse)
+
+# Sample data (replace with your actual water data)
+water <- c(2.0, 1.5, 2.5, 1.5, 2.0, 2.0, 2.0,3.0, 3.0, 2.0, 3.75, 3.0,3.0,3.5 )
+
+# Plot
+ggplot(data.frame(water), aes(x = water)) +
+  geom_histogram(binwidth = 0.1, fill = "steelblue", color = "black") +
+  geom_vline(xintercept = 2.7, color = "red", linetype = "dashed", size = 1) +
+  labs(
+    title = "Histogram of Daily Water Intake",
+    x = "Water Intake (Liters)",
+    y = "Number of Days"
+  ) +
+  theme_minimal()
+
+```
+# Q2 Summary Statistics report
+```{r}
+water<-c(2.0, 1.5, 2.5, 1.5, 2.0, 2.0, 2.0,3.0, 3.0, 2.0, 3.75, 3.0,3.0,3.5 )
+mean_intake<-mean(water)
+sd_intake<-sd(water)
+range_intake<-range(water)
+mean_intake
+sd_intake
+range_intake
+```
+
+
+
+
+$p$: proportion of days with water intake of below 2.7 L 
+    $H_0:p = 0.5$ vs $H_1:P<0.5$
+
+```{r}
+# Number of days under 2.7 liters
+x <- 8  
+
+# Total number of days
+n <- 14     
+
+# Test if proportion < 0.5 (one-tailed)
+prop.test(x, n, p = 0.5, alternative = "greater", correct = FALSE)
+
+```
+# Result 
+
+p- value 0.2965
+Significance level= 0.05 
+Since is greater that 0.05 we fail to reject the the null hypothesis
+
+At the $
+
+$p$-value = 0.2965\alpha = 0.05$, so we reject
+$H_0$
+At $5\%$ significance level
+we have enough data to conclude  that less than of the half of the days my water is below the recommended 2.7 L .This means that my water intake  waS not 
+significance low on the majority of days .
+## Q4 Reflection 
+A major trend I noticed is that my average water intake is below the recommended 2.7 liters per day. Previously, I believed that drinking 8 glasses of water was the standard, but through this project, I learned that 2.7 liters is actually a more evidence-based guideline—exceeding the 8-glass rule. This realization helped me reassess my habits. One challenge is that during winter, Even I feel 
+thirsty and I often delay drinking water due to forgetfulness, busyness, or procrastination. Tracking my hydration made me more aware that building consistent habits requires intentional effort and time, especially when daily routines are already established.
+
+
+
+
+To test using t- test : 
+```{r}
+t.test(
+  water,
+  mu = 2.7,
+  alternative = "lesS"
+)
+
+```
+$p{-value} = 0.1402 > \alpha = 0.05$. 
+Therefore, we fail to reject $H_0$. There is 
+not sufficient statistical evidence to conclude that my average daily water 
+intake is less than the recommended 2.7 liters per day.
+
+The 95% confidence interval for the true mean ranged from negative infinity to 2.82 L, which includes 2.7 L. This indicates that although my observed intake is lower, there is insufficient statistical evidence to conclude that my true average water intake is less than the recommended amount.
+
+$H_0:\mu\ge 2.7$ vs $H_1:\mu < 2.7$ 
+
+```{r}
+library(ggplot2)
+
+#  water data
+water <- c(2.0, 1.5, 2.5, 1.5, 2.0, 2.0, 2.0, 3.0, 3.0, 2.0, 3.75, 3.0, 3.0, 3.5)
+
+# Sample mean and CI
+n <- length(water)
+mean_intake <- mean(water)
+sd_intake <- sd(water)
+error <- qt(0.975, df = n - 1) * sd_intake / sqrt(n)
+lower_ci <- mean_intake - error
+upper_ci <- mean_intake + error
+
+# Create data frame for plot
+df_plot <- data.frame(
+  group = c("My Intake", "Recommended"),
+  mean = c(mean_intake, 2.7),
+  lower = c(lower_ci, 2.7),   # fixed guideline = no CI range
+  upper = c(upper_ci, 2.7)
+)
+
+# Plot
+ggplot(df_plot, aes(x = group, y = mean)) +
+  geom_point(size = 4, color = "blue") +
+  geom_errorbar(aes(ymin = lower, ymax = upper),
+                width = 0.15, size = 1) +
+  labs(
+    title = "Comparison of My Daily Water Intake 
+    to the Recommended Level (95% CI) ",
+    x = "",
+    y = "Water Intake (Liters)"
+  ) +
+  theme_minimal(base_size = 14)
+
+```
+
+```{r}
+
+t.test(
+  water,
+  mu = 2.7,
+  alternative = "two.sided"
+)
+```
+
